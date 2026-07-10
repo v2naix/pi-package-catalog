@@ -14,6 +14,8 @@ const agentDir = process.env.PI_CODING_AGENT_DIR
   ? resolve(expandHome(process.env.PI_CODING_AGENT_DIR))
   : join(homedir(), ".pi", "agent");
 const settingsPath = join(agentDir, "settings.json");
+const resourceTypes = ["extensions", "skills", "prompts", "themes"];
+const disableAllPattern = "!**/*";
 
 const [command = "help", ...args] = process.argv.slice(2);
 
@@ -202,7 +204,10 @@ function assertSettings(value, sourcePath) {
 }
 
 function disabledPackage(source) {
-  return { source, autoload: false };
+  return {
+    source,
+    ...Object.fromEntries(resourceTypes.map((type) => [type, [disableAllPattern]])),
+  };
 }
 
 function getSource(entry) {
@@ -210,14 +215,28 @@ function getSource(entry) {
 }
 
 function clonePackageEntry(entry) {
-  return typeof entry === "string" ? entry : structuredClone(entry);
+  if (typeof entry === "string") return entry;
+
+  // `autoload: false` without resource patterns resolves no files, so `pi config`
+  // has nothing to display or enable. Migrate entries created by older versions to
+  // explicit exclude-all filters: Pi can then show every resource as unchecked.
+  if (entry.autoload === false && !resourceTypes.some((type) => Array.isArray(entry[type]) && entry[type].length > 0)) {
+    return disabledPackage(entry.source);
+  }
+
+  return structuredClone(entry);
 }
 
 function isEnabled(entry) {
   if (typeof entry === "string") return true;
-  if (entry.autoload !== false) return true;
-  return [entry.extensions, entry.skills, entry.prompts, entry.themes]
-    .some((patterns) => Array.isArray(patterns) && patterns.length > 0);
+  if (entry.autoload === false) {
+    return resourceTypes.some((type) =>
+      Array.isArray(entry[type]) && entry[type].some((pattern) => !pattern.startsWith("!") && !pattern.startsWith("-")),
+    );
+  }
+  return !resourceTypes.every((type) =>
+    Array.isArray(entry[type]) && entry[type].length === 1 && entry[type][0] === disableAllPattern,
+  );
 }
 
 function assertSourceArgument(source, commandName) {

@@ -76,7 +76,7 @@ pnpm catalog add /absolute/path/to/local/package
 
 1. 将来源加入 `catalog.json`；
 2. 更新当前电脑的 Pi settings；
-3. 将新 Package 默认设为禁用，避免突然加载其中所有资源。
+3. 用显式的 exclude-all 过滤器将新 Package 默认设为禁用，避免突然加载其中所有资源，同时让 `pi config` 仍能列出这些资源。
 
 然后提交共享清单：
 
@@ -162,7 +162,8 @@ pnpm catalog apply
 - `catalog.json` 决定应当存在的受管 Package；
 - `catalog.local.json` 优先提供当前电脑的选择；
 - 本地选择不存在时，尽量保留 settings 中已有的选择；
-- 全新 Package 使用 `{ "autoload": false }`；
+- 全新 Package 为四类资源写入 `!**/*`（全部排除），使其默认禁用但仍可在 `pi config` 中选择；
+- 旧版本生成的、没有资源规则的 `{ "autoload": false }` 条目会自动迁移为上述过滤器；
 - settings 中不受本工具管理的 Package 原样保留；
 - 已从共享清单删除的受管 Package 会从 settings 中移除。
 
