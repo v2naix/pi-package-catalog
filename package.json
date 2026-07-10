@@ -1,20 +1,15 @@
 {
-  "name": "pi-toolbox",
+  "name": "pi-package-catalog",
   "version": "0.1.0",
   "private": true,
   "description": "A shared Pi package catalog with machine-local resource selections",
   "type": "module",
   "scripts": {
-    "toolbox:add": "node scripts/toolbox.mjs add",
-    "toolbox:remove": "node scripts/toolbox.mjs remove",
-    "toolbox:apply": "node scripts/toolbox.mjs apply",
-    "toolbox:config": "node scripts/toolbox.mjs config",
-    "toolbox:capture": "node scripts/toolbox.mjs capture",
-    "toolbox:status": "node scripts/toolbox.mjs status",
-    "check": "node --check scripts/toolbox.mjs"
+    "catalog": "node scripts/catalog.mjs",
+    "check": "node --check scripts/catalog.mjs"
   },
   "bin": {
-    "pi-toolbox": "./scripts/toolbox.mjs"
+    "pi-package-catalog": "./scripts/catalog.mjs"
   },
   "license": "MIT",
   "packageManager": "pnpm@10.33.0"

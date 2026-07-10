@@ -8,8 +8,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const catalogPath = join(root, "toolbox.json");
-const localPath = join(root, "toolbox.local.json");
+const catalogPath = join(root, "catalog.json");
+const localPath = join(root, "catalog.local.json");
 const agentDir = process.env.PI_CODING_AGENT_DIR
   ? resolve(expandHome(process.env.PI_CODING_AGENT_DIR))
   : join(homedir(), ".pi", "agent");
@@ -20,13 +20,13 @@ const [command = "help", ...args] = process.argv.slice(2);
 try {
   switch (command) {
     case "apply":
-      await applyToolbox();
+      await applyCatalog();
       break;
     case "capture":
       await captureSelection();
       break;
     case "config":
-      await configureToolbox();
+      await configureCatalog();
       break;
     case "status":
       await showStatus();
@@ -46,11 +46,11 @@ try {
       throw new Error(`Unknown command: ${command}`);
   }
 } catch (error) {
-  console.error(`toolbox: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`catalog: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 }
 
-async function applyToolbox() {
+async function applyCatalog() {
   const catalog = await readCatalog();
   const local = await readSelection();
   const settings = await readJson(settingsPath, {});
@@ -75,7 +75,7 @@ async function applyToolbox() {
   });
   await writeSelection(selectedPackages);
 
-  console.log(`Applied ${catalog.packages.length} toolbox package(s) to ${settingsPath}`);
+  console.log(`Applied ${catalog.packages.length} catalog package(s) to ${settingsPath}`);
   if (unmanagedPackages.length > 0) {
     console.log(`Preserved ${unmanagedPackages.length} unmanaged package(s)`);
   }
@@ -96,8 +96,8 @@ async function captureSelection() {
   console.log(`Captured local choices for ${catalog.packages.length} package(s) in ${localPath}`);
 }
 
-async function configureToolbox() {
-  await applyToolbox();
+async function configureCatalog() {
+  await applyCatalog();
 
   const result = spawnSync("pi", ["config"], { stdio: "inherit" });
   if (result.error) throw result.error;
@@ -106,7 +106,7 @@ async function configureToolbox() {
   }
 
   await captureSelection();
-  console.log("Local choices captured; toolbox.json was not changed");
+  console.log("Local choices captured; catalog.json was not changed");
 }
 
 async function showStatus() {
@@ -115,7 +115,7 @@ async function showStatus() {
   const localBySource = new Map(local.packages.map((entry) => [getSource(entry), entry]));
 
   if (catalog.packages.length === 0) {
-    console.log("Toolbox catalog is empty");
+    console.log("Package catalog is empty");
     return;
   }
 
@@ -129,41 +129,41 @@ async function addPackage(source) {
   assertSourceArgument(source, "add");
   const catalog = await readCatalog();
   if (catalog.packages.includes(source)) {
-    console.log(`Already in toolbox: ${source}`);
+    console.log(`Already in catalog: ${source}`);
     return;
   }
 
   catalog.packages.push(source);
   await writeJson(catalogPath, catalog);
-  await applyToolbox();
-  console.log(`Added to toolbox (disabled by default): ${source}`);
-  console.log("Commit toolbox.json to share the catalog");
+  await applyCatalog();
+  console.log(`Added to catalog (disabled by default): ${source}`);
+  console.log("Commit catalog.json to share the catalog");
 }
 
 async function removePackage(source) {
   assertSourceArgument(source, "remove");
   const catalog = await readCatalog();
   if (!catalog.packages.includes(source)) {
-    throw new Error(`Package is not in toolbox: ${source}`);
+    throw new Error(`Package is not in catalog: ${source}`);
   }
 
   catalog.packages = catalog.packages.filter((entry) => entry !== source);
   await writeJson(catalogPath, catalog);
-  await applyToolbox();
-  console.log(`Removed from toolbox: ${source}`);
-  console.log("Commit toolbox.json to share the catalog change");
+  await applyCatalog();
+  console.log(`Removed from catalog: ${source}`);
+  console.log("Commit catalog.json to share the catalog change");
 }
 
 async function readCatalog() {
   const value = await readJson(catalogPath);
   if (!isObject(value) || value.version !== 1 || !Array.isArray(value.packages)) {
-    throw new Error(`Invalid toolbox catalog: ${catalogPath}`);
+    throw new Error(`Invalid package catalog: ${catalogPath}`);
   }
   if (!value.packages.every((source) => typeof source === "string" && source.length > 0)) {
-    throw new Error(`Toolbox catalog packages must be non-empty source strings: ${catalogPath}`);
+    throw new Error(`Catalog packages must be non-empty source strings: ${catalogPath}`);
   }
   if (new Set(value.packages).size !== value.packages.length) {
-    throw new Error(`Toolbox catalog contains duplicate package sources: ${catalogPath}`);
+    throw new Error(`Catalog contains duplicate package sources: ${catalogPath}`);
   }
   return { version: 1, packages: [...value.packages] };
 }
@@ -172,7 +172,7 @@ async function readSelection() {
   if (!existsSync(localPath)) return { version: 1, packages: [] };
   const value = await readJson(localPath);
   if (!isObject(value) || value.version !== 1 || !Array.isArray(value.packages)) {
-    throw new Error(`Invalid local toolbox selection: ${localPath}`);
+    throw new Error(`Invalid local catalog selection: ${localPath}`);
   }
   return {
     version: 1,
@@ -221,7 +221,7 @@ function isEnabled(entry) {
 }
 
 function assertSourceArgument(source, commandName) {
-  if (!source) throw new Error(`Usage: toolbox ${commandName} <package-source>`);
+  if (!source) throw new Error(`Usage: pi-package-catalog ${commandName} <package-source>`);
 }
 
 async function readJson(path, fallback) {
@@ -253,15 +253,15 @@ function expandHome(path) {
 }
 
 function printHelp() {
-  console.log(`Pi toolbox catalog with machine-local resource choices
+  console.log(`Pi package catalog with machine-local resource choices
 
 Usage:
-  toolbox add <source>     Add a package to the shared catalog
-  toolbox remove <source>  Remove a package from the shared catalog
-  toolbox apply            Merge catalog and local choices into Pi settings
-  toolbox config           Apply, run 'pi config', then capture local choices
-  toolbox capture          Capture choices after running 'pi config' directly
-  toolbox status           Show local package enablement
+  pi-package-catalog add <source>     Add a package to the shared catalog
+  pi-package-catalog remove <source>  Remove a package from the shared catalog
+  pi-package-catalog apply            Merge catalog and local choices into Pi settings
+  pi-package-catalog config           Apply, run 'pi config', then capture local choices
+  pi-package-catalog capture          Capture choices after running 'pi config' directly
+  pi-package-catalog status           Show local package enablement
 
 Shared: ${catalogPath}
 Local:  ${localPath}
