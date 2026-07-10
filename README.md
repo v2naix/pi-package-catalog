@@ -1,5 +1,7 @@
 # pi-package-catalog
 
+**简体中文** | [English](README.en.md)
+
 一个用于管理个人 [Pi](https://pi.dev) Package 清单的小工具。
 
 它将“多台电脑共享哪些 Package”和“每台电脑实际启用哪些资源”分开管理：
