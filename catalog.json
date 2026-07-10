@@ -1,4 +1,6 @@
 {
   "version": 1,
-  "packages": []
+  "packages": [
+    "git:github.com/v2naix/pi-extras"
+  ]
 }
