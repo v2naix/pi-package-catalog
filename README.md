@@ -1,22 +1,22 @@
 # pi-package-catalog
 
-**简体中文** | [English](README.en.md)
+[简体中文](README.zh-CN.md) | **English**
 
-一个用于管理个人 [Pi](https://pi.dev) Package 清单的小工具。
+A small tool for managing your personal [Pi](https://pi.dev) package catalog.
 
-它将“多台电脑共享哪些 Package”和“每台电脑实际启用哪些资源”分开管理：
+It manages "which packages are shared across computers" separately from "which resources are enabled on each computer":
 
-- Package 来源提交到 Git；
-- extensions、skills、prompts、themes 的启用选择保留在本机；
-- Pi 的其他设置以及不受本工具管理的 Package 不会被覆盖。
+- Package sources are committed to Git;
+- Enabled selections for extensions, skills, prompts, and themes stay local to each computer;
+- Other Pi settings and packages not managed by this tool are left untouched.
 
-## 为什么需要它
+## Why use it?
 
-Pi 本身可以通过 `pi install` 和 `pi config` 管理 Package，但用户级配置通常都保存在同一个 `~/.pi/agent/settings.json` 中。
+Pi can manage packages with `pi install` and `pi config`, but user-level configuration is typically stored together in `~/.pi/agent/settings.json`.
 
-如果直接同步整个 settings 文件，不同电脑的模型、主题、路径和资源选择很容易互相覆盖。本工具只同步 Package 来源清单，并为每台电脑单独保存资源选择。
+Syncing the entire settings file can easily cause models, themes, paths, and resource selections from different computers to overwrite one another. This tool syncs only a catalog of package sources and stores resource selections separately on each computer.
 
-例如，Git 中共享：
+For example, Git may contain this shared catalog:
 
 ```json
 {
@@ -28,32 +28,32 @@ Pi 本身可以通过 `pi install` 和 `pi config` 管理 Package，但用户级
 }
 ```
 
-但电脑 A 可以只启用其中的 `diff.ts`，电脑 B 可以启用整个 Package。
+Computer A can enable only `diff.ts` from a package, while computer B can enable the entire package.
 
-## 文件说明
+## Files
 
-| 文件 | 是否提交 Git | 用途 |
+| File | Commit to Git? | Purpose |
 |---|---:|---|
-| `catalog.json` | 是 | 多台电脑共享的 Package 来源清单 |
-| `catalog.local.json` | 否 | 当前电脑对清单内 Package 的启用和过滤选择 |
-| `catalog.local.example.json` | 是 | 本地选择文件示例 |
-| `~/.pi/agent/settings.json` | 否 | Pi 的实际用户配置，本工具只维护其中相关的 `packages` 条目 |
+| `catalog.json` | Yes | Package source catalog shared across computers |
+| `catalog.local.json` | No | Resource enablement and filter selections for the current computer |
+| `catalog.local.example.json` | Yes | Example local selection file |
+| `~/.pi/agent/settings.json` | No | Pi's actual user configuration; this tool only maintains the relevant `packages` entries |
 
-如果设置了 `PI_CODING_AGENT_DIR`，本工具会改用：
+If `PI_CODING_AGENT_DIR` is set, this tool uses:
 
 ```text
 $PI_CODING_AGENT_DIR/settings.json
 ```
 
-## 环境要求
+## Requirements
 
-需要：
+You need:
 
-- Node.js；
-- pnpm；
-- Pi CLI（使用 `config` 命令时需要）。
+- Node.js;
+- pnpm;
+- Pi CLI (required for the `config` command).
 
-项目没有第三方运行时依赖，clone 后即可使用：
+The project has no third-party runtime dependencies and can be used immediately after cloning:
 
 ```bash
 git clone <your-github-repo-url> ~/.pi/pi-package-catalog
@@ -61,11 +61,11 @@ cd ~/.pi/pi-package-catalog
 pnpm catalog --help
 ```
 
-## 快速开始
+## Quick start
 
-### 1. 添加 Package
+### 1. Add a package
 
-支持 Pi 接受的 npm、Git 和本地 Package 来源：
+npm, Git, and local package sources accepted by Pi are supported:
 
 ```bash
 pnpm catalog add npm:@scope/package
@@ -74,13 +74,13 @@ pnpm catalog add git:github.com/owner/repo@v1.0.0
 pnpm catalog add /absolute/path/to/local/package
 ```
 
-该命令会：
+This command:
 
-1. 将来源加入 `catalog.json`；
-2. 更新当前电脑的 Pi settings；
-3. 用显式的 exclude-all 过滤器将新 Package 默认设为禁用，避免突然加载其中所有资源，同时让 `pi config` 仍能列出这些资源。
+1. Adds the source to `catalog.json`;
+2. Updates Pi settings on the current computer;
+3. Disables the new package by default with explicit exclude-all filters, preventing its resources from loading unexpectedly while keeping them visible in `pi config`.
 
-然后提交共享清单：
+Then commit the shared catalog:
 
 ```bash
 git add catalog.json
@@ -88,32 +88,32 @@ git commit -m "add Pi package"
 git push
 ```
 
-> 本地绝对路径通常不能跨电脑复用。需要跨设备同步时，优先使用 npm 或 Git 来源。
+> Absolute local paths generally cannot be reused across computers. Prefer npm or Git sources when syncing across devices.
 
-### 2. 选择要启用的资源
+### 2. Select resources to enable
 
-运行：
+Run:
 
 ```bash
 pnpm catalog config
 ```
 
-它会依次执行：
+It performs these steps in order:
 
-1. `apply`：把共享清单和当前电脑的选择合并到 Pi settings；
-2. 打开官方的 `pi config`；
-3. `capture`：把新的选择保存到 `catalog.local.json`。
+1. `apply`: merges the shared catalog and selections for this computer into Pi settings;
+2. Opens the official `pi config` interface;
+3. `capture`: saves the updated selections to `catalog.local.json`.
 
-在 `pi config` 中可以按 Package 分别启用或禁用：
+In `pi config`, you can enable or disable each package's:
 
-- extensions；
-- skills；
-- prompt templates；
-- themes。
+- extensions;
+- skills;
+- prompt templates;
+- themes.
 
-`catalog.local.json` 已被 `.gitignore` 忽略，因此选择只影响当前电脑。
+`catalog.local.json` is ignored by `.gitignore`, so these selections affect only the current computer.
 
-### 3. 在另一台电脑同步
+### 3. Sync on another computer
 
 ```bash
 cd ~/.pi/pi-package-catalog
@@ -121,63 +121,63 @@ git pull
 pnpm catalog apply
 ```
 
-`apply` 会把新来源加入该电脑的 Pi settings。第一次出现的 Package 默认禁用；如需调整，继续运行：
+`apply` adds new sources to Pi settings on that computer. Packages seen for the first time are disabled by default. To adjust their selections, run:
 
 ```bash
 pnpm catalog config
 ```
 
-Pi 会根据 settings 在启动时解析和安装缺失的 npm/Git Package。
+Pi resolves and installs missing npm/Git packages from settings when it starts.
 
-## 命令参考
+## Command reference
 
 ### `pnpm catalog add <source>`
 
-将 Package 来源加入共享清单：
+Add a package source to the shared catalog:
 
 ```bash
 pnpm catalog add git:github.com/owner/repo
 ```
 
-重复添加同一个字符串不会产生重复条目。
+Adding the same source string more than once does not create duplicate entries.
 
 ### `pnpm catalog remove <source>`
 
-从共享清单、当前电脑的本地选择和 Pi settings 中移除由本工具管理的来源：
+Remove a managed source from the shared catalog, local selections for the current computer, and Pi settings:
 
 ```bash
 pnpm catalog remove git:github.com/owner/repo
 ```
 
-该操作不会删除其他不受本工具管理的 Package。
+This does not remove packages that are not managed by this tool.
 
 ### `pnpm catalog apply`
 
-将配置合并到 Pi settings：
+Merge the configuration into Pi settings:
 
 ```bash
 pnpm catalog apply
 ```
 
-合并规则：
+Merge rules:
 
-- `catalog.json` 决定应当存在的受管 Package；
-- `catalog.local.json` 优先提供当前电脑的选择；
-- 本地选择不存在时，尽量保留 settings 中已有的选择；
-- 全新 Package 为四类资源写入 `!**/*`（全部排除），使其默认禁用但仍可在 `pi config` 中选择；
-- 旧版本生成的、没有资源规则的 `{ "autoload": false }` 条目会自动迁移为上述过滤器；
-- settings 中不受本工具管理的 Package 原样保留；
-- 已从共享清单删除的受管 Package 会从 settings 中移除。
+- `catalog.json` determines which managed packages should exist;
+- `catalog.local.json` takes priority for selections on the current computer;
+- Existing selections in settings are preserved when no local selection exists;
+- New packages receive `!**/*` (exclude all) for all four resource types, keeping them disabled by default but selectable in `pi config`;
+- Entries generated by older versions as `{ "autoload": false }` without resource rules are automatically migrated to these filters;
+- Packages in settings that are not managed by this tool remain unchanged;
+- Managed packages removed from the shared catalog are removed from settings.
 
 ### `pnpm catalog config`
 
-推荐的日常配置入口：
+The recommended command for routine configuration:
 
 ```bash
 pnpm catalog config
 ```
 
-等价于：
+Equivalent to:
 
 ```text
 apply → pi config → capture
@@ -185,31 +185,29 @@ apply → pi config → capture
 
 ### `pnpm catalog capture`
 
-从当前 Pi settings 中读取清单内 Package 的选择，并写入 `catalog.local.json`：
+Read selections for catalog packages from the current Pi settings and write them to `catalog.local.json`:
 
 ```bash
 pnpm catalog capture
 ```
 
-通常不需要单独运行。只有直接执行过官方命令：
+You normally do not need to run this separately. Run it manually only after using the official command directly:
 
 ```bash
 pi config
 ```
 
-之后，才需要手动执行 `capture` 保存选择。
-
-`capture` 只处理 `catalog.json` 中登记的 Package，不会接管其他 Package，也不会捕获主题、模型等非 Package 设置。
+`capture` processes only packages registered in `catalog.json`. It does not take over other packages or capture non-package settings such as the active theme or model.
 
 ### `pnpm catalog status`
 
-显示当前电脑上清单内每个 Package 的启用状态：
+Show the enablement status of each catalog package on the current computer:
 
 ```bash
 pnpm catalog status
 ```
 
-示例：
+Example:
 
 ```text
 enabled   npm:@scope/package
@@ -218,15 +216,15 @@ disabled  git:github.com/owner/repo
 
 ### `pnpm catalog --help`
 
-显示命令帮助和当前使用的配置文件路径：
+Show command help and the paths of the configuration files currently in use:
 
 ```bash
 pnpm catalog --help
 ```
 
-## 常用工作流
+## Common workflows
 
-### 添加一个 Package 并在当前电脑启用部分资源
+### Add a package and enable some of its resources on the current computer
 
 ```bash
 pnpm catalog add git:github.com/owner/repo
@@ -236,7 +234,7 @@ git commit -m "add owner/repo"
 git push
 ```
 
-### 拉取他人在共享清单中添加的 Package
+### Pull a package added to the shared catalog by someone else
 
 ```bash
 git pull
@@ -244,28 +242,28 @@ pnpm catalog apply
 pnpm catalog config
 ```
 
-### 直接使用过 `pi config` 后保存选择
+### Save selections after using `pi config` directly
 
 ```bash
 pi config
 pnpm catalog capture
 ```
 
-### 更新已安装的 Package
+### Update installed packages
 
-Package 仍然直接关联各自的 npm 或 Git 上游。本工具不复制安装产物，也不代替 Pi 的更新机制：
+Packages remain linked directly to their respective npm or Git upstreams. This tool neither copies installation artifacts nor replaces Pi's update mechanism:
 
 ```bash
 pi update --extensions
 ```
 
-对于带版本号的 npm 来源或带 ref 的 Git 来源，Pi 会遵循相应的固定版本规则。
+For versioned npm sources or Git sources with a ref, Pi follows the corresponding pinned-version rules.
 
-## 与 Pi Package 的关系
+## Relationship to Pi packages
 
-本工具不是新的 Package 格式，也不负责执行 extension。它只是管理 Pi settings 中的一组 `packages` 来源。
+This tool does not introduce a new package format and does not execute extensions. It only manages a set of `packages` sources in Pi settings.
 
-实际资源仍由 Pi Package 提供。一个 Package 可以同时包含多个：
+The actual resources are still provided by Pi packages. A single package can contain multiple:
 
 ```text
 extensions/
@@ -274,11 +272,11 @@ prompts/
 themes/
 ```
 
-因此，零散的个人 extensions 可以集中放入一个普通的聚合 Pi Package（例如 `pi-extras`），然后将这个 Package 作为一个 Git 或本地来源加入清单，无需为每个 TS 文件创建仓库。
+You can therefore collect standalone personal extensions into a regular aggregate Pi package (such as `pi-extras`) and add that package to the catalog as a Git or local source, without creating a repository for every TypeScript file.
 
-## 当前边界
+## Current scope
 
-当前版本只管理：
+The current version manages only:
 
 ```json
 {
@@ -286,25 +284,25 @@ themes/
 }
 ```
 
-它不会管理 settings 顶层的：
+It does not manage these top-level settings fields:
 
-- `extensions`；
-- `skills`；
-- `prompts`；
-- `themes`；
-- 模型、Provider、主题等其他 Pi 设置。
+- `extensions`;
+- `skills`;
+- `prompts`;
+- `themes`;
+- models, providers, themes, or other Pi settings.
 
-如果要管理单个 TS 文件，推荐先将它放进一个聚合 Pi Package，再由本工具管理该 Package。
+To manage an individual TypeScript file, first place it in an aggregate Pi package and then manage that package with this tool.
 
-## 安全提示
+## Security
 
-Pi extensions 会以当前用户权限执行任意代码。添加第三方 Package 或网上找到的 TS 文件前，应当：
+Pi extensions execute arbitrary code with the current user's permissions. Before adding a third-party package or a TypeScript file found online:
 
-- 阅读源码；
-- 检查许可证；
-- 优先固定 npm 版本、Git tag 或 commit；
-- 避免未经审核地跟随远程仓库最新分支。
+- Read the source code;
+- Check the license;
+- Prefer pinned npm versions, Git tags, or commits;
+- Avoid following the latest branch of a remote repository without review.
 
-## 其他调用方式
+## Other ways to run it
 
-命令也可以通过安装后生成的 `pi-package-catalog` 可执行文件运行。
+The commands can also be run through the `pi-package-catalog` executable created after installation.
