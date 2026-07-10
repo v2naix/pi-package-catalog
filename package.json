@@ -5,12 +5,19 @@
   "description": "A shared Pi package catalog with machine-local resource selections",
   "type": "module",
   "scripts": {
-    "catalog": "node scripts/catalog.mjs",
-    "check": "node --check scripts/catalog.mjs"
+    "catalog": "node scripts/catalog.ts",
+    "check": "tsc --noEmit"
   },
   "bin": {
-    "pi-package-catalog": "./scripts/catalog.mjs"
+    "pi-package-catalog": "./scripts/catalog.ts"
+  },
+  "engines": {
+    "node": ">=22.18.0"
   },
   "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  },
   "packageManager": "pnpm@10.33.0"
 }

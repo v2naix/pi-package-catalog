@@ -49,7 +49,7 @@ $PI_CODING_AGENT_DIR/settings.json
 
 You need:
 
-- Node.js;
+- Node.js 22.18 or later;
 - pnpm;
 - Pi CLI (required for the `config` command).
 

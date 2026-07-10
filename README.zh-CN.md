@@ -49,7 +49,7 @@ $PI_CODING_AGENT_DIR/settings.json
 
 需要：
 
-- Node.js；
+- Node.js 22.18 或更高版本；
 - pnpm；
 - Pi CLI（使用 `config` 命令时需要）。
 

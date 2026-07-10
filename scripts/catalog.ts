@@ -7,6 +7,21 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+type JsonObject = Record<string, unknown>;
+type ResourceType = "extensions" | "skills" | "prompts" | "themes";
+type PackageConfig = JsonObject & {
+  source: string;
+  autoload?: boolean;
+  extensions?: string[];
+  skills?: string[];
+  prompts?: string[];
+  themes?: string[];
+};
+type PackageEntry = string | PackageConfig;
+type Catalog = { version: 1; packages: string[] };
+type Selection = { version: 1; packages: PackageEntry[] };
+type Settings = JsonObject & { packages?: unknown[] };
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const catalogPath = join(root, "catalog.json");
 const localPath = join(root, "catalog.local.json");
@@ -14,7 +29,7 @@ const agentDir = process.env.PI_CODING_AGENT_DIR
   ? resolve(expandHome(process.env.PI_CODING_AGENT_DIR))
   : join(homedir(), ".pi", "agent");
 const settingsPath = join(agentDir, "settings.json");
-const resourceTypes = ["extensions", "skills", "prompts", "themes"];
+const resourceTypes: ResourceType[] = ["extensions", "skills", "prompts", "themes"];
 const disableAllPattern = "!**/*";
 
 const [command = "help", ...args] = process.argv.slice(2);
@@ -127,7 +142,7 @@ async function showStatus() {
   }
 }
 
-async function addPackage(source) {
+async function addPackage(source: string | undefined) {
   assertSourceArgument(source, "add");
   const catalog = await readCatalog();
   if (catalog.packages.includes(source)) {
@@ -142,7 +157,7 @@ async function addPackage(source) {
   console.log("Commit catalog.json to share the catalog");
 }
 
-async function removePackage(source) {
+async function removePackage(source: string | undefined) {
   assertSourceArgument(source, "remove");
   const catalog = await readCatalog();
   if (!catalog.packages.includes(source)) {
@@ -156,7 +171,7 @@ async function removePackage(source) {
   console.log("Commit catalog.json to share the catalog change");
 }
 
-async function readCatalog() {
+async function readCatalog(): Promise<Catalog> {
   const value = await readJson(catalogPath);
   if (!isObject(value) || value.version !== 1 || !Array.isArray(value.packages)) {
     throw new Error(`Invalid package catalog: ${catalogPath}`);
@@ -170,7 +185,7 @@ async function readCatalog() {
   return { version: 1, packages: [...value.packages] };
 }
 
-async function readSelection() {
+async function readSelection(): Promise<Selection> {
   if (!existsSync(localPath)) return { version: 1, packages: [] };
   const value = await readJson(localPath);
   if (!isObject(value) || value.version !== 1 || !Array.isArray(value.packages)) {
@@ -182,39 +197,39 @@ async function readSelection() {
   };
 }
 
-async function writeSelection(packages) {
+async function writeSelection(packages: PackageEntry[]) {
   await writeJson(localPath, { version: 1, packages });
 }
 
-function normalizePackageEntries(entries, sourcePath) {
+function normalizePackageEntries(entries: unknown[], sourcePath: string): PackageEntry[] {
   return entries.map((entry) => {
     if (typeof entry === "string" && entry.length > 0) return entry;
     if (isObject(entry) && typeof entry.source === "string" && entry.source.length > 0) {
-      return structuredClone(entry);
+      return structuredClone(entry) as PackageConfig;
     }
     throw new Error(`Invalid package entry in ${sourcePath}`);
   });
 }
 
-function assertSettings(value, sourcePath) {
+function assertSettings(value: unknown, sourcePath: string): asserts value is Settings {
   if (!isObject(value)) throw new Error(`Invalid settings object: ${sourcePath}`);
   if (value.packages !== undefined && !Array.isArray(value.packages)) {
     throw new Error(`Invalid packages setting: ${sourcePath}`);
   }
 }
 
-function disabledPackage(source) {
+function disabledPackage(source: string): PackageConfig {
   return {
     source,
     ...Object.fromEntries(resourceTypes.map((type) => [type, [disableAllPattern]])),
   };
 }
 
-function getSource(entry) {
+function getSource(entry: PackageEntry): string {
   return typeof entry === "string" ? entry : entry.source;
 }
 
-function clonePackageEntry(entry) {
+function clonePackageEntry(entry: PackageEntry): PackageEntry {
   if (typeof entry === "string") return entry;
 
   // `autoload: false` without resource patterns resolves no files, so `pi config`
@@ -227,7 +242,7 @@ function clonePackageEntry(entry) {
   return structuredClone(entry);
 }
 
-function isEnabled(entry) {
+function isEnabled(entry: PackageEntry): boolean {
   if (typeof entry === "string") return true;
   if (entry.autoload === false) {
     return resourceTypes.some((type) =>
@@ -239,11 +254,11 @@ function isEnabled(entry) {
   );
 }
 
-function assertSourceArgument(source, commandName) {
+function assertSourceArgument(source: string | undefined, commandName: string): asserts source is string {
   if (!source) throw new Error(`Usage: pi-package-catalog ${commandName} <package-source>`);
 }
 
-async function readJson(path, fallback) {
+async function readJson(path: string, fallback?: unknown): Promise<unknown> {
   try {
     return JSON.parse(await readFile(path, "utf8"));
   } catch (error) {
@@ -255,18 +270,18 @@ async function readJson(path, fallback) {
   }
 }
 
-async function writeJson(path, value) {
+async function writeJson(path: string, value: unknown) {
   await mkdir(dirname(path), { recursive: true });
   const temporaryPath = `${path}.${process.pid}.tmp`;
   await writeFile(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
   await rename(temporaryPath, path);
 }
 
-function isObject(value) {
+function isObject(value: unknown): value is JsonObject {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function expandHome(path) {
+function expandHome(path: string): string {
   if (path === "~") return homedir();
   return path.startsWith("~/") ? join(homedir(), path.slice(2)) : path;
 }
