@@ -2,6 +2,7 @@
   "version": 1,
   "packages": [
     "git:github.com/v2naix/pi-extras",
-    "npm:pi-web-access"
+    "npm:pi-web-access",
+    "npm:@juicesharp/rpiv-ask-user-question"
   ]
 }
