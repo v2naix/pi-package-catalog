@@ -1,6 +1,7 @@
 {
   "version": 1,
   "packages": [
-    "git:github.com/v2naix/pi-extras"
+    "git:github.com/v2naix/pi-extras",
+    "npm:pi-web-access"
   ]
 }
